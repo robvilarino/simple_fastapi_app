@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import httpx
 
 def valvelogic(a: str, b: str, op: str) -> dict[str, int]:
     result = eval(f"{a} {op} {b}")
@@ -41,3 +42,20 @@ def evaluate_operation(a: int, b: int, op: str) -> dict[str, int]:
         return valvelogic(str(a), str(b), op_dict[op])
     else:
         return {"error": "Invalid operation"}
+    
+@app.get("/randombibleverse")
+def get_random_bible_verse() -> str:
+    
+    url = "https://bible-api.com/data/web/random"
+    response = httpx.get(url)
+    
+    if response.status_code == 200:
+        verse_data = response.json()
+        
+        text = verse_data["random_verse"]["text"]
+        book = verse_data["random_verse"]["book"]
+        chapter = verse_data["random_verse"]["chapter"]
+        verse = verse_data["random_verse"]["verse"]
+        translation = verse_data["translation"]["name"]
+        
+        return f'{text} - {book} {chapter}:{verse} ({translation})'
