@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import httpx
 
 def valvelogic(a: str, b: str, op: str) -> dict[str, int]:
@@ -59,3 +59,61 @@ def get_random_bible_verse() -> str:
         translation = verse_data["translation"]["name"]
         
         return f'{text} - {book} {chapter}:{verse} ({translation})'
+    
+@app.get("/hitmetubbs")
+def hit_me_tubbs() -> dict[str, str]:
+    url = "https://miamivice.fandom.com/api.php"
+
+    params = {
+    "action": "query",
+    "format": "json",
+    "formatversion": 2,
+
+    "generator": "random",
+    "grnnamespace": 0,
+    "grnlimit": 1,
+    
+    "prop": "revisions|info",
+    "rvprop": "content",
+    "rvslots": "main",
+    "inprop": "url",
+    }
+
+    try:
+        response = httpx.get(
+            url,
+            params=params,
+            timeout=10.0,
+        )
+
+        response.raise_for_status()
+
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not connect to the Miami Vice Wiki",
+        )
+
+    except httpx.HTTPStatusError:
+        raise HTTPException(
+            status_code=502,
+            detail="The Miami Vice Wiki returned an error",
+        )
+
+    tubbs_report = response.json()
+    pages = tubbs_report.get("query", {}).get("pages", [])
+
+    if not pages:
+        raise HTTPException(
+            status_code=502,
+            detail="The Miami Vice Wiki returned no articles",
+        )
+    
+    article = pages[0]
+    print(article)
+
+    return {
+        "title": article["title"],
+        "summary": article.get("revisions", [{}])[0].get("slots", {}).get("main", {}).get("content") or "No summary available.",
+        "url": article["fullurl"],
+    }
