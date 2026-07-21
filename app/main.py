@@ -110,10 +110,12 @@ def hit_me_tubbs() -> dict[str, str]:
         )
     
     article = pages[0]
-    print(article)
+
+    summary = article.get("revisions", [{}])[0].get("slots", {}).get("main", {}).get("content") or "No summary available."
+    print(summary)
 
     return {
         "title": article["title"],
-        "summary": article.get("revisions", [{}])[0].get("slots", {}).get("main", {}).get("content") or "No summary available.",
+        "summary": summary,
         "url": article["fullurl"],
     }
